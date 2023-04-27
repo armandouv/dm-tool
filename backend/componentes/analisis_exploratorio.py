@@ -42,11 +42,13 @@ def obtener_analisis_exploratorio(df: DataFrame):
         "head": df.head(10).to_csv(),
         "shape": df.shape,
         "types": df.dtypes.to_csv(),
-        "null_count": str(df.isnull().sum()),
+        "null_count": df.isnull().sum().to_frame().reset_index().rename(
+            columns={'index': 'variable', 0: 'null_count'}).to_csv(),
         "hist": hist,
         "describe": df.describe().to_csv(),
         "box_plots": box_plots,
-        "describe_object": df.describe(include='object').to_csv() if df.select_dtypes(include='object').shape[1] > 0 else "",
+        "describe_object": df.describe(include='object').to_csv() if df.select_dtypes(include='object').shape[
+                                                                         1] > 0 else "",
         "categorical_hists": categorical_hists,
         "categorical_groupings": categorical_groupings,
         "correlation_matrix": correlation_matrix.to_csv(),
