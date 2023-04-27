@@ -4,7 +4,7 @@ import {Inicio} from "./pages/Inicio";
 import {PageNotFound} from "./pages/PageNotFound";
 import {NextUIProvider} from "@nextui-org/react";
 import {Footer} from "./components/Footer";
-import {AnalisisExploratorio} from "./pages/AnalisisExploratorio/AnalisisExploratorio";
+import {AnalisisExploratorio} from "./pages/AnalisisExploratorio";
 import {SiteNavbar} from "./components/SiteNavbar/SiteNavbar";
 
 

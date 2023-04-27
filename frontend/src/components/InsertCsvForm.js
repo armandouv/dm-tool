@@ -1,10 +1,9 @@
 import {Button, Container, Input, Spacer} from "@nextui-org/react";
 import {PaperUpload} from "react-iconly";
-import {LoadingModal} from "./LoadingModal";
 import React, {useRef, useState} from "react";
 
 
-export function InsertCsvForm({executeComponent, isLoading}) {
+export function InsertCsvForm({executeComponent}) {
     const [filenameLabel, setFilenameLabel] = useState("");
 
     const inputFile = useRef(null);
@@ -74,8 +73,6 @@ export function InsertCsvForm({executeComponent, isLoading}) {
                     Ejecutar
                 </Button>
             </form>
-
-            <LoadingModal visible={isLoading}/>
 
         </Container>
     );

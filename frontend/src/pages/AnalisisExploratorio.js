@@ -1,11 +1,12 @@
 import React, {useState} from "react";
-import {Page} from "../../components/Page";
-import {Container,} from "@nextui-org/react";
-import "./AnalisisExploratorio.css";
+import {Page} from "../components/Page";
+import {Container, Text} from "@nextui-org/react";
 import Papa from "papaparse";
-import {DatasetDisplay} from "../../components/DatasetDisplay";
-import {InsertCsvForm} from "../../components/InsertCsvForm";
-import {ErrorModal} from "../../components/ErrorModal";
+import {DatasetDisplay} from "../components/DatasetDisplay";
+import {InsertCsvForm} from "../components/InsertCsvForm";
+import {ErrorModal} from "../components/ErrorModal";
+import {LoadingModal} from "../components/LoadingModal";
+import {ComponentData} from "../components/ComponentData";
 
 const API = process.env.REACT_APP_API_URL;
 
@@ -34,9 +35,7 @@ export const AnalisisExploratorio = () => {
 
         const formData = new FormData(form.current);
         const res = await fetch(API + "analisis-exploratorio", {
-            method: "POST",
-            body: formData,
-            rejectUnauthorized: false
+            method: "POST", body: formData, rejectUnauthorized: false
         });
         const infoRes = await res.json();
 
@@ -44,7 +43,7 @@ export const AnalisisExploratorio = () => {
             const headData = Papa.parse(infoRes["head"], {header: true}).data;
             const shapeData = infoRes["shape"];
             const typesData = Papa.parse(infoRes["types"], {header: true}).data;
-            const nullCountData = infoRes["null_count"];
+            const nullCountData = Papa.parse(infoRes["null_count"], {header: true}).data;
             const histData = infoRes["hist"];
             const describeData = Papa.parse(infoRes["describe"], {header: true}).data;
             const boxPlotsData = infoRes["box_plots"];
@@ -79,57 +78,55 @@ export const AnalisisExploratorio = () => {
         setIsLoading(false);
     };
 
-    return (
-        <Page
-            titulo="Análisis Exploratorio de Datos"
-            descripcion={
-                <div>
-                    <p>
-                        Al utilizar este componente podrás analizar tu dataset
-                        para encontrar información relevante, como
-                        la estructura de los datos, valores faltantes, valores atípicos, variables
-                        correlacionadas, así como llevar a cabo la preparación de datos.
-                    </p>
-                </div>
-            }
-        >
-            <InsertCsvForm executeComponent={queryEDA} isLoading={isLoading}/>
+    return (<Page
+        titulo="Análisis Exploratorio de Datos"
+        descripcion={"Al utilizar este componente podrás analizar tu dataset para encontrar información relevante, como " +
+            "la estructura de los datos, valores faltantes, valores atípicos, variables correlacionadas, así como " +
+            "llevar a cabo la preparación de datos."}
+    >
+        <InsertCsvForm executeComponent={queryEDA} isLoading={isLoading}/>
 
-            {
-                errorMsg && (
-                    <ErrorModal
-                        setErrorMsg={setErrorMsg}
-                        errorMsg={errorMsg}
-                    />
-                )
-            }
+        {errorMsg && (<ErrorModal
+            setErrorMsg={setErrorMsg}
+            errorMsg={errorMsg}
+        />)}
 
-            {isOutputReady && <Container>
-                <DatasetDisplay
-                    title={"Parte superior del dataset (head)"}
-                    filename={"eda_head"}
-                    data={head}/>
+        <LoadingModal visible={isLoading}/>
 
-                <DatasetDisplay
-                    title={"Diccionario de datos"}
-                    filename={"eda_types"}
-                    data={types}/>
+        {isOutputReady && <Container>
+            <DatasetDisplay
+                title={"Parte superior del dataset (head)"}
+                filename={"eda_head"}
+                data={head}/>
 
-                <DatasetDisplay
-                    title={"Describe"}
-                    filename={"eda_describe"}
-                    data={describe}/>
+            <ComponentData title={"Shape"}>
+                <Text><Text b>Filas:</Text> {shape[0]}</Text>
+                <Text><Text b>Columnas:</Text> {shape[1]}</Text>
+            </ComponentData>
 
-                <DatasetDisplay
-                    title={"Describe object"}
-                    filename={"eda_describe_object"}
-                    data={describeObject}/>
+            <DatasetDisplay title="Valores nulos"
+                            filename={"null_count"}
+                            data={nullCount}/>
 
-                <DatasetDisplay
-                    title={"Matriz de correlación"}
-                    filename={"eda_corr"}
-                    data={correlationMatrix}/>
-            </Container>}
-        </Page>
-    );
+            <DatasetDisplay
+                title={"Diccionario de datos"}
+                filename={"eda_types"}
+                data={types}/>
+
+            <DatasetDisplay
+                title={"Describe"}
+                filename={"eda_describe"}
+                data={describe}/>
+
+            <DatasetDisplay
+                title={"Describe object"}
+                filename={"eda_describe_object"}
+                data={describeObject}/>
+
+            <DatasetDisplay
+                title={"Matriz de correlación"}
+                filename={"eda_corr"}
+                data={correlationMatrix}/>
+        </Container>}
+    </Page>);
 };
