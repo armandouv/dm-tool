@@ -19,23 +19,23 @@ def obtener_analisis_exploratorio(df: DataFrame):
 
     categorical_hists = {}
     categorical_groupings = {}
+    numerical_columns = df.select_dtypes(include=['int', 'float']).columns.tolist()
     for column in df.select_dtypes(include='object').columns.tolist():
         if df[column].nunique() > 10:
             continue
 
         sns.countplot(y=column, data=df)
         categorical_hists[column] = save_plot_and_encode()
+        categorical_groupings[column] = df[numerical_columns + [column]].groupby(column).agg('mean').to_csv()
 
-        categorical_groupings[column] = df.groupby(column).agg(['mean']).to_csv()
-
-    correlation_matrix = df.corr()
+    correlation_matrix = df.select_dtypes(include=['int', 'float']).corr()
 
     plt.figure(figsize=(14, 7))
     sns.heatmap(correlation_matrix, cmap='RdBu_r', annot=True)
     heatmap = save_plot_and_encode()
 
     plt.figure(figsize=(14, 7))
-    sns.heatmap(df.corr(), cmap='RdBu_r', annot=True, mask=np.triu(correlation_matrix))
+    sns.heatmap(correlation_matrix, cmap='RdBu_r', annot=True, mask=np.triu(correlation_matrix))
     trimmed_heatmap = save_plot_and_encode()
 
     return {
@@ -46,7 +46,7 @@ def obtener_analisis_exploratorio(df: DataFrame):
         "hist": hist,
         "describe": df.describe().to_csv(),
         "box_plots": box_plots,
-        "describe_object": df.describe(include=object).to_csv(),
+        "describe_object": df.describe(include='object').to_csv() if df.select_dtypes(include='object').shape[1] > 0 else "",
         "categorical_hists": categorical_hists,
         "categorical_groupings": categorical_groupings,
         "correlation_matrix": correlation_matrix.to_csv(),

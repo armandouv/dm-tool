@@ -10,7 +10,7 @@ app = Flask(__name__)
 CORS(app)
 
 
-@app.route('/analisis-exploratorio', methods=['GET'])
+@app.route('/analisis-exploratorio', methods=['POST'])
 def analisis_exploratorio():
     if not request.files.get("dataset"):
         print("No file attached")
