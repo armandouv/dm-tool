@@ -12,10 +12,12 @@ def obtener_analisis_exploratorio(df: DataFrame):
     df.hist(figsize=(14, 14), xrot=45)
     hist = save_plot_and_encode()
 
+    plt.figure(figsize=(14, 7))
     box_plots = {}
     for column in df.select_dtypes(include='number').columns.tolist():
         sns.boxplot(x=column, data=df)
         box_plots[column] = save_plot_and_encode()
+        plt.clf()
 
     categorical_hists = {}
     categorical_groupings = {}
@@ -26,7 +28,9 @@ def obtener_analisis_exploratorio(df: DataFrame):
 
         sns.countplot(y=column, data=df)
         categorical_hists[column] = save_plot_and_encode()
-        categorical_groupings[column] = df[numerical_columns + [column]].groupby(column).agg('mean').to_csv()
+        plt.clf()
+
+        categorical_groupings[column] = df[numerical_columns + [column]].groupby(column).mean().reset_index().to_csv()
 
     correlation_matrix = df.select_dtypes(include=['int', 'float']).corr()
 
