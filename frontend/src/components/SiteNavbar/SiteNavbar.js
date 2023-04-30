@@ -31,11 +31,11 @@ export function SiteNavbar() {
                 </NavLink>
             </Navbar.Brand>
             <Navbar.Content activeColor={"primary"} hideIn="sm" variant={"highlight-solid-rounded"}>
-                {links.map((item, index) => <SiteNavbarLink name={item[0]} link={item[1]}/>)}
+                {links.map((item, index) => <SiteNavbarLink key={index} name={item[0]} link={item[1]}/>)}
             </Navbar.Content>
             <Navbar.Collapse>
                 {links.map((item, index) => (
-                    <Navbar.CollapseItem>
+                    <Navbar.CollapseItem key={index}>
                         <Link to={item[1]}>
                             {item[0]}
                         </Link>
