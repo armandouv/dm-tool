@@ -1,5 +1,5 @@
 import React from "react";
-import { Modal, Button, Text, Row } from "@nextui-org/react";
+import {Button, Modal, Row, Text} from "@nextui-org/react";
 
 export const ErrorModal = ({ errorMsg, setErrorMsg }) => {
     const [visible, setVisible] = React.useState(true);
@@ -14,9 +14,9 @@ export const ErrorModal = ({ errorMsg, setErrorMsg }) => {
             <Modal aria-labelledby="modal-title" open={visible}>
                 <Modal.Header>
                     <Text id="modal-title" size={20}>
-                        Se ha producido un&ensp;
+                        Se ha producido un&nbsp;
                         <Text b color="error" size={20}>
-                            ERROR
+                            error
                         </Text>
                     </Text>
                 </Modal.Header>

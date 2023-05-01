@@ -7,7 +7,7 @@ import React from "react";
 function getHeader(parsedData) {
     const tableHeaders = [];
     const arrayHead = Object.keys(parsedData[0]);
-    for (var i in arrayHead) {
+    for (const i in arrayHead) {
         tableHeaders.push({
             key: arrayHead[i],
             label: arrayHead[i].toUpperCase(),
