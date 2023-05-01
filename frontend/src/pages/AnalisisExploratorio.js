@@ -2,13 +2,14 @@ import React, {useState} from "react";
 import {Page} from "../components/Page";
 import {Container, Text} from "@nextui-org/react";
 import Papa from "papaparse";
-import {DatasetDisplay} from "../components/DatasetDisplay";
+import {DatasetDisplay, getHeader} from "../components/DatasetDisplay";
 import {InsertCsvForm} from "../components/InsertCsvForm";
 import {ErrorModal} from "../components/ErrorModal";
 import {LoadingModal} from "../components/LoadingModal";
 import {ComponentData} from "../components/ComponentData";
 import {ComponentStep} from "../components/ComponentStep";
 import {ComponentPlot} from "../components/ComponentPlot";
+import {DataPreparationForm} from "../components/DataPreparationForm";
 
 const API = process.env.REACT_APP_API_URL;
 
@@ -17,25 +18,34 @@ export const AnalisisExploratorio = () => {
     const [errorMsg, setErrorMsg] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [isOutputReady, setIsOutputReady] = useState(false);
+    const [isDataPrepReady, setIsDataPrepReady] = useState(false);
 
-    const [head, setHead] = useState("");
+    const [csv, setCsv] = useState(null);
+    const [head, setHead] = useState(null);
     const [shape, setShape] = useState([]);
-    const [types, setTypes] = useState("");
-    const [nullCount, setNullCount] = useState("");
+    const [types, setTypes] = useState(null);
+    const [nullCount, setNullCount] = useState(null);
     const [hist, setHist] = useState(null);
-    const [describe, setDescribe] = useState("");
+    const [describe, setDescribe] = useState(null);
     const [boxPlots, setBoxPlots] = useState({});
-    const [describeObject, setDescribeObject] = useState("");
+    const [describeObject, setDescribeObject] = useState(null);
     const [categoricalHists, setCategoricalHists] = useState({});
     const [categoricalGroupings, setCategoricalGroupings] = useState({});
-    const [correlationMatrix, setCorrelationMatrix] = useState("");
+    const [correlationMatrix, setCorrelationMatrix] = useState(null);
     const [heatmap, setHeatmap] = useState(null);
     const [trimmedHeatmap, setTrimmedHeatmap] = useState(null);
 
+    const [newNullCount, setNewNullCount] = useState(null);
+    const [newBoxPlots, setNewBoxPlots] = useState({});
+    const [newCsv, setNewCsv] = useState(null);
+
     const queryEDA = async (form) => {
         setIsLoading(true);
+        setIsOutputReady(false);
+        setIsDataPrepReady(false);
 
         const formData = new FormData(form.current);
+        setCsv(formData.get("dataset"));
         try {
             const res = await fetch(API + "analisis-exploratorio", {
                 method: "POST", body: formData, rejectUnauthorized: false
@@ -78,6 +88,40 @@ export const AnalisisExploratorio = () => {
                 setTrimmedHeatmap(trimmedHeatmapData);
 
                 setIsOutputReady(true);
+            } else {
+                setErrorMsg("Error en la respuesta del servidor: " + infoRes["error"]);
+            }
+        } catch (error) {
+            setErrorMsg("Error al contactar al servidor");
+        }
+
+        setIsLoading(false);
+    };
+
+    const queryDataPrep = async (dataPrepRequest) => {
+        setIsLoading(true);
+        setIsDataPrepReady(false);
+        const formData = new FormData();
+        formData.append("json", JSON.stringify(dataPrepRequest));
+        formData.append("dataset", csv);
+
+        try {
+            const res = await fetch(API + "analisis-exploratorio/preparacion-datos", {
+                method: "POST", body: formData, rejectUnauthorized: false
+            });
+
+            const infoRes = await res.json();
+
+            if (res.ok) {
+                const newNullCountData = Papa.parse(infoRes["null_count"], {header: true}).data;
+                const newBoxPlotsData = infoRes["box_plots"];
+                const newCsvData = Papa.parse(infoRes["new_csv"], {header: true}).data;
+
+                setNewNullCount(newNullCountData);
+                setNewBoxPlots(newBoxPlotsData);
+                setNewCsv(newCsvData);
+
+                setIsDataPrepReady(true);
             } else {
                 setErrorMsg("Error en la respuesta del servidor: " + infoRes["error"]);
             }
@@ -199,7 +243,30 @@ export const AnalisisExploratorio = () => {
 
             <ComponentStep title={"Paso 5: Preparación de los datos"}
                            description="Para que nuestro conjunto de datos tenga datos íntegros, completos y correctos, es posible remover las entradas que posiblemente afecten a este objetivo. Dos de estos casos podrían tratarse de valores atípicos y nulos.">
+                <DataPreparationForm executeComponent={queryDataPrep}
+                                     header={correlationMatrix ? getHeader(correlationMatrix) : []}/>
 
+                {isDataPrepReady && <Container>
+                    <DatasetDisplay title="Valores nulos actualizados"
+                                    description="Si se eliminaron los valores nulos, se puede observar que el conteo para todas las variables es de 0."
+                                    filename={"new_null_count"}
+                                    data={newNullCount}/>
+
+                    {Object.keys(newBoxPlots).length !== 0 &&
+                        (<ComponentData title="Diagramas para detectar posibles valores atípicos"
+                                        description="Se observa que ahora los puntos se encuentran distribuidos de mejor forma en los diagramas de cajas.">
+                            {Object.entries(newBoxPlots).map(([key, value]) => {
+                                const title = "Diagrama de cajas para variable " + key;
+                                return (<ComponentPlot title={title} key={title} imgData={value} alt={title}/>);
+                            })}
+                        </ComponentData>)}
+
+                    <DatasetDisplay title="Dataset preparado"
+                                    description="Ahora puedes obtener tu dataset listo para las futuras etapas del proceso de Minería de Datos."
+                                    filename={"prepared_dataset"}
+                                    data={newCsv}
+                                    hidden/>
+                </Container>}
             </ComponentStep>
         </Container>}
     </Page>);

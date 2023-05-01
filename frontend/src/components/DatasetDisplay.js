@@ -4,7 +4,7 @@ import React from "react";
 import {ComponentData} from "./ComponentData";
 
 
-function getHeader(parsedData) {
+export function getHeader(parsedData) {
     const tableHeaders = [];
     const arrayHead = Object.keys(parsedData[0]);
     for (const i in arrayHead) {
@@ -17,7 +17,7 @@ function getHeader(parsedData) {
 }
 
 
-export const DatasetDisplay = ({title, description, filename, data}) => {
+export const DatasetDisplay = ({title, description, filename, data, hidden}) => {
 
     return (
         <ComponentData title={title} description={description}>
@@ -35,10 +35,10 @@ export const DatasetDisplay = ({title, description, filename, data}) => {
                     name="download"
                 ></box-icon>
             </CSVLink>
-            <CsvTable
+            {!hidden && <CsvTable
                 data={data}
                 cols={getHeader(data)}
-            />
+            />}
         </ComponentData>
     )
 };

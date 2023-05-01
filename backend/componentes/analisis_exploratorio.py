@@ -67,6 +67,7 @@ def obtener_datos_preparados(df: DataFrame, delete_nulls: bool, attributes: dict
     if delete_nulls:
         df = df.dropna()
 
+    plt.figure(figsize=(14, 7))
     box_plots = {}
     for attribute, bounds in attributes.items():
         if attribute not in df:
@@ -78,13 +79,16 @@ def obtener_datos_preparados(df: DataFrame, delete_nulls: bool, attributes: dict
         if type(lower) not in [int, float] or type(upper) not in [int, float]:
             return {"error": "Los valores de límite deben ser números para " + attribute}
 
-        df = df[lower <= df[attribute] <= upper]
+        df = df[df[attribute] >= lower]
+        df = df[df[attribute] <= upper]
 
         sns.boxplot(x=attribute, data=df)
         box_plots[attribute] = save_plot_and_encode()
+        plt.clf()
 
     return {
-        "null_count": str(df.isnull().sum()),
+        "null_count": df.isnull().sum().to_frame().reset_index().rename(
+            columns={'index': 'variable', 0: 'null_count'}).to_csv(),
         "box_plots": box_plots,
         "new_csv": df.to_csv()
     }
