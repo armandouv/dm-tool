@@ -1,7 +1,7 @@
-import {Container, Spacer, Text} from "@nextui-org/react";
 import {CsvTable} from "./CsvTable";
 import {CSVLink} from "react-csv";
 import React from "react";
+import {ComponentData} from "./ComponentData";
 
 
 function getHeader(parsedData) {
@@ -17,14 +17,10 @@ function getHeader(parsedData) {
 }
 
 
-export const DatasetDisplay = ({title, filename, data}) => {
+export const DatasetDisplay = ({title, description, filename, data}) => {
 
     return (
-        <Container>
-            <Spacer y={2}/>
-            <Text h3>
-                {title}
-            </Text>
+        <ComponentData title={title} description={description}>
             <CSVLink
                 data={data}
                 target="_blank"
@@ -43,7 +39,6 @@ export const DatasetDisplay = ({title, filename, data}) => {
                 data={data}
                 cols={getHeader(data)}
             />
-        </Container>
+        </ComponentData>
     )
-
 };

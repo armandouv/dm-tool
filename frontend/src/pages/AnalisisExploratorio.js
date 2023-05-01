@@ -1,12 +1,14 @@
 import React, {useState} from "react";
 import {Page} from "../components/Page";
-import {Container, Image, Text} from "@nextui-org/react";
+import {Container, Text} from "@nextui-org/react";
 import Papa from "papaparse";
 import {DatasetDisplay} from "../components/DatasetDisplay";
 import {InsertCsvForm} from "../components/InsertCsvForm";
 import {ErrorModal} from "../components/ErrorModal";
 import {LoadingModal} from "../components/LoadingModal";
 import {ComponentData} from "../components/ComponentData";
+import {ComponentStep} from "../components/ComponentStep";
+import {ComponentPlot} from "../components/ComponentPlot";
 
 const API = process.env.REACT_APP_API_URL;
 
@@ -49,12 +51,14 @@ export const AnalisisExploratorio = () => {
                 const histData = infoRes["hist"];
                 const describeData = Papa.parse(infoRes["describe"], {header: true}).data;
                 const boxPlotsData = infoRes["box_plots"];
-                const describeObjectData = infoRes["describe_object"] ? Papa.parse(infoRes["describe_object"], {header: true}).data : null;
+                const describeObjectData = infoRes["describe_object"] ?
+                    Papa.parse(infoRes["describe_object"], {header: true}).data : null;
                 const categoricalHistsData = infoRes["categorical_hists"];
-                const categoricalGroupingsData = Object.entries(infoRes["categorical_groupings"]).reduce((result, [key, value]) => {
-                    result[key] = Papa.parse(value, {header: true}).data;
-                    return result;
-                }, {});
+                const categoricalGroupingsData = Object.entries(infoRes["categorical_groupings"]).reduce(
+                    (result, [key, value]) => {
+                        result[key] = Papa.parse(value, {header: true}).data;
+                        return result;
+                    }, {});
                 const correlationMatrixData = Papa.parse(infoRes["correlation_matrix"], {header: true}).data;
                 const heatmapData = infoRes["heatmap"];
                 const trimmedHeatmapData = infoRes["trimmed_heatmap"];
@@ -98,79 +102,105 @@ export const AnalisisExploratorio = () => {
         <LoadingModal visible={isLoading}/>
 
         {isOutputReady && <Container>
-            <DatasetDisplay
-                title={"Parte superior del dataset (head)"}
-                filename={"eda_head"}
-                data={head}/>
 
-            <ComponentData title={"Shape"}>
-                <Text><Text b>Filas:</Text> {shape[0]}</Text>
-                <Text><Text b>Columnas:</Text> {shape[1]}</Text>
-            </ComponentData>
 
-            <ComponentData title={"Histograma"}>
-                <Image src={`data:image/png;base64,${hist}`}
-                       alt={"Histograma"}/>
-            </ComponentData>
+            <ComponentStep title={"Paso 1: Descripción de la estructura de los datos"}
+                           description="Antes que nada, es necesario comprender la naturaleza y estructura de nuestro conjunto de datos.">
+                <DatasetDisplay
+                    title={"Parte superior del dataset (head)"}
+                    description={"Se muestran algunas filas del dataset para observar su estructura"}
+                    filename={"eda_head"}
+                    data={head}/>
 
-            <ComponentData title={"Mapa de calor"}>
-                <Image src={`data:image/png;base64,${heatmap}`}
-                       alt={"Mapa de calor"}/>
-            </ComponentData>
+                <ComponentData title={"Shape (forma de los datos)"}
+                               description={"Se muestra la estructura general del conjunto de datos, incluyendo la cantidad de filas y columnas que tiene."}>
+                    <Text><Text b>Filas:</Text> {shape[0]}</Text>
+                    <Text><Text b>Columnas:</Text> {shape[1]}</Text>
+                </ComponentData>
 
-            <ComponentData title={"Mapa de calor reducido"}>
-                <Image src={`data:image/png;base64,${trimmedHeatmap}`}
-                       alt={"Mapa de calor reducido"}/>
-            </ComponentData>
+                <DatasetDisplay
+                    title={"Tipos de datos (variables)"}
+                    description={"Se muestran los tipos de datos de cada columna (variables y tipos)."}
+                    filename={"eda_types"}
+                    data={types}/>
+            </ComponentStep>
 
-            {Object.entries(boxPlots).map(([key, value]) => {
-                const title = "Diagrama de cajas: " + key;
-                return (<ComponentData title={title} key={title}>
-                    <Image src={`data:image/png;base64,${value}`}
-                           alt={"Diagrama de cajas"}/>
-                </ComponentData>);
-            })}
 
-            {Object.entries(categoricalHists).map(([key, value]) => {
-                const title = "Histograma de variable: " + key;
-                return (<ComponentData title={title} key={title}>
-                    <Image src={`data:image/png;base64,${value}`}
-                           alt={"Histograma de variable categórica"}/>
-                </ComponentData>);
-            })}
+            <ComponentStep title={"Paso 2: Identificación de datos faltantes"}
+                           description="Los valores faltantes pueden causar problemas al momento de analizar nuestro dataset.">
+                <DatasetDisplay title="Valores nulos"
+                                description="Es necesario identificar si nuestro conjunto de datos tiene datos faltantes o nulos. A continuación, se muestra una tabla con el conteo de valores nulos para cada variable."
+                                filename={"null_count"}
+                                data={nullCount}/>
+            </ComponentStep>
 
-            {Object.entries(categoricalGroupings).map(([key, value]) => {
-                const title = "Datos de variables agrupadas: " + key;
-                return (<DatasetDisplay
-                    title={title}
-                    key={title}
-                    filename={"grouped"}
-                    data={value}/>);
-            })}
+            <ComponentStep title={"Paso 3: Detección de valores atípicos"}
+                           description="Al igual que los valores faltantes, los valores atípicos pueden causar problemas al momento de analizar nuestro dataset. Se pueden utilizar gráficos para tener una idea general de las distribuciones de los datos, y se sacan estadísticas para resumir los datos. Estas dos estrategias son recomendables y se complementan. La distribución se refiere a cómo se distribuyen los valores en una variable o con qué frecuencia ocurren. Para las variables numéricas, se observa cuántas veces aparecen grupos de números en una columna. Mientras que para las variables categóricas, son las clases de cada columna y su frecuencia.">
+                <ComponentPlot title={"Histograma (distribución de variables numéricas)"}
+                               description="Para analizar la distribución de variables numéricas, se utiliza un histograma, que agrupa los números en rangos."
+                               imgData={hist} alt={"Histograma (distribución de variables numéricas)"}/>
 
-            <DatasetDisplay title="Valores nulos"
-                            filename={"null_count"}
-                            data={nullCount}/>
+                <DatasetDisplay
+                    title={"Resumen estadístico de variables numéricas (describe)"}
+                    description={"Se obtienen algunas estadísticas que \"resumen\" las variables numéricas. Se incluye un recuento, media, desviación, valor mínimo, valor máximo, percentil inferior (25%), 50% y percentil superior (75%). Por defecto, el percentil 50 es lo mismo que la mediana. Se observa que para cada variable, el recuento también ayuda a identificar variables con valores perdidos."}
+                    filename={"eda_describe"}
+                    data={describe}/>
 
-            <DatasetDisplay
-                title={"Diccionario de datos"}
-                filename={"eda_types"}
-                data={types}/>
+                <ComponentData title="Diagramas para detectar posibles valores atípicos"
+                               description="Se generan diagramas de cajas para detectar más fácilmente los valores atípicos:">
+                    {Object.entries(boxPlots).map(([key, value]) => {
+                        const title = "Diagrama de cajas para variable " + key;
+                        return (<ComponentPlot title={title} key={title} imgData={value} alt={title}/>);
+                    })}
+                </ComponentData>
 
-            <DatasetDisplay
-                title={"Describe"}
-                filename={"eda_describe"}
-                data={describe}/>
+                {describeObject && <DatasetDisplay
+                    title={"Distribución de variables categóricas"}
+                    description="Se refiere a la observación de las clases de cada columna (variable) y su frecuencia. Aquí, los gráficos ayudan para tener una idea general de las distribuciones, mientras que las estadísticas dan números reales."
+                    filename={"eda_describe_object"}
+                    data={describeObject}/>}
 
-            {describeObject && <DatasetDisplay
-                title={"Describe object"}
-                filename={"eda_describe_object"}
-                data={describeObject}/>}
+                {Object.entries(categoricalHists).map(([key, value]) => {
+                    const title = "Histograma de variable categórica " + key;
+                    return (<ComponentPlot title={title} key={title} imgData={value} alt={title}/>);
+                })}
 
-            <DatasetDisplay
-                title={"Matriz de correlación"}
-                filename={"eda_corr"}
-                data={correlationMatrix}/>
+                {Object.keys(categoricalGroupings).length !== 0 &&
+                    (<ComponentData title="Agrupación por variables categóricas"
+                                    description="Se agrupan los datos respecto a cada variable categórica, y se calcula la media de las variables numéricas respecto a la variable categórica agrupada.">
+                        {Object.entries(categoricalGroupings).map(([key, value]) => {
+                            const title = "Medias obtenidas con los datos agrupados respecto a la variable " + key;
+                            return (<DatasetDisplay
+                                title={title}
+                                key={title}
+                                filename={"grouped"}
+                                data={value}/>);
+                        })}
+                    </ComponentData>)}
+            </ComponentStep>
+
+
+            <ComponentStep title={"Paso 4: Identificación de relaciones entre pares variables"}
+                           description="Es importante comprender qué variables se encuentran relacionadas entre sí para poder extraer información valiosa en futuras etapas del proceso de Minería de Datos.">
+                <DatasetDisplay
+                    title={"Matriz de correlación"}
+                    description="Una matriz de correlaciones es útil para analizar la relación entre las variables numéricas. Una correlación es un valor entre -1 y 1 que equivale a qué tan cerca se mueven simultáneamente los valores de dos variables. Una correlación positiva significa que a medida que una característica aumenta, la otra también aumenta. Una correlación negativa significa que a medida que una característica disminuye, la otra también disminuye. Las correlaciones cercanas a 0 indican una relación débil, mientras que las más cercanas a -1 o 1 significan una relación fuerte."
+                    filename={"eda_corr"}
+                    data={correlationMatrix}/>
+
+                <ComponentPlot title="Mapa de calor"
+                               description="Se muestra el mapa de calor de la matriz obtenida. Los colores cercanos al rojo indican una correlación positiva, proporcional a la intensidad del color, mientras que los colores cercanos al azul indican una correlación negativa, de nueva cuenta proporcional a la intensidad del color, como se muestra en la escala."
+                               imgData={heatmap} alt="Mapa de calor"/>
+                <ComponentPlot title="Mapa de calor reducido"
+                               description={"Se muestra el mapa de calor \"resumido\""}
+                               imgData={trimmedHeatmap} alt="Mapa de calor reducido"/>
+            </ComponentStep>
+
+
+            <ComponentStep title={"Paso 5: Preparación de los datos"}
+                           description="Para que nuestro conjunto de datos tenga datos íntegros, completos y correctos, es posible remover las entradas que posiblemente afecten a este objetivo. Dos de estos casos podrían tratarse de valores atípicos y nulos.">
+
+            </ComponentStep>
         </Container>}
     </Page>);
 };
