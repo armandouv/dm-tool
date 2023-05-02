@@ -18,16 +18,21 @@ export function getHeader(parsedData) {
 
 
 export const DatasetDisplay = ({title, description, filename, data, hidden}) => {
+    const modifiedData = data.map((row, index_) => {
+        const {[Object.keys(row)[0]]: _, ...newRow} = row;
+        return newRow;
+    });
 
     return (
         <ComponentData title={title} description={description}>
             <CSVLink
-                data={data}
+                data={modifiedData.slice(0, -1)}
                 target="_blank"
                 filename={
                     filename +
                     ".csv"
                 }
+                noDownload={true}
             >
                 Descargar CSV
                 <box-icon

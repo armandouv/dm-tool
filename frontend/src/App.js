@@ -6,6 +6,7 @@ import {NextUIProvider} from "@nextui-org/react";
 import {Footer} from "./components/Footer";
 import {AnalisisExploratorio} from "./pages/AnalisisExploratorio";
 import {SiteNavbar} from "./components/SiteNavbar/SiteNavbar";
+import {AnalisisComponentesPrincipales} from "./pages/AnalisisComponentesPrincipales";
 
 
 function App() {
@@ -20,6 +21,10 @@ function App() {
                 <Route
                     path="/analisis-exploratorio"
                     element={<AnalisisExploratorio/>}
+                />
+                <Route
+                    path="/analisis-componentes-principales"
+                    element={<AnalisisComponentesPrincipales/>}
                 />
                 <Route path="*" element={<PageNotFound/>}/>
             </Routes>

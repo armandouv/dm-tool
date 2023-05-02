@@ -8,7 +8,8 @@ import {SiteNavbarLink} from "./SiteNavbarLink";
 export function SiteNavbar() {
     const links = [
         ["Inicio", "/"],
-        ["Análisis Exploratorio", "/analisis-exploratorio"]
+        ["Análisis Exploratorio", "/analisis-exploratorio"],
+        ["Análisis de Componentes Principales", "/analisis-componentes-principales"]
     ];
 
     return (

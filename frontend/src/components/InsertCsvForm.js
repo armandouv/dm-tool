@@ -3,7 +3,7 @@ import {PaperUpload} from "react-iconly";
 import React, {useRef, useState} from "react";
 
 
-export function InsertCsvForm({executeComponent}) {
+export function InsertCsvForm({executeComponent, children}) {
     const [filenameLabel, setFilenameLabel] = useState("");
 
     const inputFile = useRef(null);
@@ -61,6 +61,8 @@ export function InsertCsvForm({executeComponent}) {
                     helperText={fileHelper.text}
                     style={{cursor: "not-allowed"}}
                 />
+                <Spacer y={1.5}/>
+                {children}
                 <Spacer y={1}/>
                 <Button
                     flat
