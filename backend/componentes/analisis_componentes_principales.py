@@ -26,6 +26,7 @@ def obtener_analisis_componentes_principales(df: DataFrame, min_max: bool):
     standardize = StandardScaler() if not min_max else MinMaxScaler()
     standardized_matrix = standardize.fit_transform(numerical_df)
     standardized_dataset = DataFrame(standardized_matrix, columns=numerical_df.columns)
+    standardized_dataset_head = standardized_dataset.head(10)
 
     pca = PCA(n_components=len(numerical_df.columns))
     pca.fit(standardized_matrix)
@@ -54,6 +55,7 @@ def obtener_analisis_componentes_principales(df: DataFrame, min_max: bool):
         "correlation_matrix": correlation_matrix.to_csv(),
         "trimmed_heatmap": trimmed_heatmap,
         "standardized_dataset": standardized_dataset.to_csv(),
+        "standardized_dataset_head": standardized_dataset_head.to_csv(),
         "eigenvectors": DataFrame(eigenvectors).to_csv(),
         "explained_variances": DataFrame(explained_variances).to_csv(),
         "candidate_variances": DataFrame(candidate_variances).to_csv(),
