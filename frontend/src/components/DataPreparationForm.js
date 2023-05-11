@@ -13,9 +13,10 @@ export function DataPreparationForm({executeComponent, header}) {
             const newAttributes = {...prevAttributes};
             if (!newAttributes[attribute]) newAttributes[attribute] = {};
 
-            const parsedValue = parseFloat(e.target.value);
+            const inputValue = e.target.value.trim();
+            const parsedValue = parseFloat(inputValue);
 
-            if (typeof parsedValue === "number" && !isNaN(parsedValue)) {
+            if (inputValue !== "" && typeof parsedValue === "number" && !isNaN(parsedValue)) {
                 newAttributes[attribute][e.target.name] = parsedValue;
             } else if (e.target.name in newAttributes[attribute]) {
                 delete newAttributes[attribute][e.target.name];

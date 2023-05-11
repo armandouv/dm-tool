@@ -1,6 +1,6 @@
 import React, {useState} from "react";
 import {Page} from "../components/Page";
-import {Container, Radio, Text} from "@nextui-org/react";
+import {Button, Container, Radio, Spacer, Text} from "@nextui-org/react";
 import Papa from "papaparse";
 import {DatasetDisplay} from "../components/DatasetDisplay";
 import {InsertCsvForm} from "../components/InsertCsvForm";
@@ -17,6 +17,7 @@ export const AnalisisComponentesPrincipales = () => {
     const [errorMsg, setErrorMsg] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [isOutputReady, setIsOutputReady] = useState(false);
+    const [isGetPCsReady, setIsGetPCsReady] = useState(false);
 
     const [standardization, setStandardization] = useState("Standard");
 
@@ -30,15 +31,24 @@ export const AnalisisComponentesPrincipales = () => {
     const [eigenvectors, setEigenvectors] = useState(null);
     const [explainedVariances, setExplainedVariances] = useState(null);
     const [candidateVariances, setCandidateVariances] = useState(null);
+    const [candidateNumComponents, setCandidateNumComponents] = useState([0, 0]);
     const [cumulativeVariancesGraph, setCumulativeVariancesGraph] = useState(null);
     const [relevanceProportion, setRelevanceProportion] = useState(null);
     const [componentsLoad, setComponentsLoad] = useState(null);
     const [absComponentsLoad, setAbsComponentsLoad] = useState(null);
 
+    const [transformedDataset, setTransformedDataset] = useState(null);
+    const [transformedHead, setTransformedHead] = useState(null);
+
+    const [numComponents, setNumComponents] = useState("1");
+    const numbers = Array(candidateNumComponents[1] - candidateNumComponents[0] + 1)
+        .fill()
+        .map((_, index) => candidateNumComponents[0] + index);
+
     const queryPCA = async (form) => {
         setIsLoading(true);
         setIsOutputReady(false);
-        //setIsDataPrepReady(false);
+        setIsGetPCsReady(false);
 
         const formData = new FormData(form.current);
         setCsv(formData.get("dataset"));
@@ -62,6 +72,7 @@ export const AnalisisComponentesPrincipales = () => {
                 const eigenvectorsData = Papa.parse(infoRes["eigenvectors"], {header: true}).data;
                 const explainedVariancesData = Papa.parse(infoRes["explained_variances"], {header: true}).data;
                 const candidateVariancesData = Papa.parse(infoRes["candidate_variances"], {header: true}).data;
+                const candidateNumComponentsData = infoRes["candidate_num_components"];
                 const cumulativeVariancesGraphData = infoRes["cumulative_variances_graph"];
                 const relevanceProportionData = Papa.parse(infoRes["relevance_proportion"], {header: true}).data;
                 const componentsLoadData = Papa.parse(infoRes["components_load"], {header: true}).data;
@@ -76,12 +87,47 @@ export const AnalisisComponentesPrincipales = () => {
                 setEigenvectors(eigenvectorsData);
                 setExplainedVariances(explainedVariancesData);
                 setCandidateVariances(candidateVariancesData);
+                setCandidateNumComponents(candidateNumComponentsData);
                 setCumulativeVariancesGraph(cumulativeVariancesGraphData);
                 setRelevanceProportion(relevanceProportionData);
                 setComponentsLoad(componentsLoadData);
                 setAbsComponentsLoad(absComponentsLoadData);
 
                 setIsOutputReady(true);
+            } else {
+                setErrorMsg("Error en la respuesta del servidor: " + infoRes["error"]);
+            }
+        } catch (error) {
+            setErrorMsg("Error al contactar al servidor");
+        }
+
+        setIsLoading(false);
+    };
+
+    const queryGetPCs = async () => {
+        setIsLoading(true);
+        setIsGetPCsReady(false);
+
+        const formData = new FormData();
+        formData.append("min_max", standardization === "MinMax" ? "true" : "false");
+        formData.append("num_components", numComponents);
+        formData.append("dataset", csv);
+
+        try {
+            const res = await fetch(API + "componentes-principales", {
+                method: "POST", body: formData, rejectUnauthorized: false
+            });
+
+            const infoRes = await res.json();
+
+            if (res.ok) {
+                const transformedDatasetData = Papa.parse(infoRes["transformed_dataset"], {header: true}).data;
+                const transformedHeadData = Papa.parse(infoRes["head"], {header: true}).data;
+
+                setTransformedDataset(transformedDatasetData);
+                setTransformedHead(transformedHeadData);
+
+                setIsGetPCsReady(true);
             } else {
                 setErrorMsg("Error en la respuesta del servidor: " + infoRes["error"]);
             }
@@ -207,6 +253,55 @@ export const AnalisisComponentesPrincipales = () => {
                     description="Se muestran los eigenvectores obtenidos previamente, con los nombres respectivos para cada columna y mostrando valores absolutos únicamente."
                     filename={"components_load_abs"}
                     data={absComponentsLoad}/>
+            </ComponentStep>
+
+            <ComponentStep title={"Paso 7: Selección de componentes"}
+                           description="Puede seleccionar el número de componentes a utilizar dentro del rango preferido de varianza, o bien, seleccionar manualmente las columnas a eliminar.">
+                <DatasetDisplay
+                    title={"Varianzas acumuladas candidatas"}
+                    description="A continuación, se muestra el número de componentes a utilizar que cumple con el criterio de la varianza acumulada entre el 75 y 90% de la varianza total. Por lo tanto, el número mostrado en la primera columna es un candidato para elegir el número de componentes."
+                    filename={"candidate_variances"}
+                    data={candidateVariances}/>
+
+                <ComponentData title="Selecciona el número de componentes a utilizar"
+                               description="Tomando en cuenta las varianzas acumuladas anteriores para cada número de componentes, selecciona un número de componentes a mantener.">
+                    <Radio.Group label="Número de componentes" value={numComponents} onChange={setNumComponents}>
+                        {numbers.map((number) => (
+                            <Radio
+                                key={number}
+                                size="sm"
+                                value={number.toString()}
+                            >
+                                {number}
+                            </Radio>
+                        ))}
+                    </Radio.Group>
+                    <Spacer y={1.5}/>
+                    <Button
+                        flat
+                        size={"lg"}
+                        color="primary"
+                        type="button"
+                        onPress={queryGetPCs}
+                    >
+                        Ejecutar
+                    </Button>
+                </ComponentData>
+
+                {isGetPCsReady && <ComponentData title="Dataset con los componentes seleccionados"
+                                                 description="A continuación, se muestra el dataset con los componentes principales seleccionados.">
+                    <DatasetDisplay
+                        title={"Parte superior del dataset transformado (head)"}
+                        description={"Se muestran algunas filas del dataset transformado para observar su estructura"}
+                        filename={"pca_prepared_head"}
+                        data={transformedHead}/>
+
+                    <DatasetDisplay title="Dataset con los componentes seleccionados"
+                                    description="Ahora puedes obtener tu dataset listo para las futuras etapas del proceso de Minería de Datos."
+                                    filename={"pca_prepared_dataset"}
+                                    data={transformedDataset}
+                                    hidden/>
+                </ComponentData>}
             </ComponentStep>
         </Container>}
     </Page>);

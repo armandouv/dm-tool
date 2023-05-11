@@ -3,7 +3,8 @@ import json
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
-from componentes.analisis_componentes_principales import obtener_analisis_componentes_principales
+from componentes.analisis_componentes_principales import obtener_analisis_componentes_principales, \
+    obtener_componentes_principales
 from componentes.analisis_exploratorio import obtener_analisis_exploratorio, obtener_datos_preparados
 from util import csv_as_df
 
@@ -70,6 +71,24 @@ def analisis_componentes_principales():
 
     min_max = request.form.get("min_max") == "true"
     result = obtener_analisis_componentes_principales(df, min_max)
+
+    return jsonify(result)
+
+
+@app.route('/componentes-principales', methods=['POST'])
+def componentes_principales():
+    if not request.files.get("dataset"):
+        print("No file attached")
+        return jsonify({'error': 'No se adjuntó el archivo de dataset'}), 400
+
+    df = csv_as_df(request.files["dataset"])
+    if df is None:
+        return jsonify({'error': 'Error al leer archivo CSV'}), 400
+
+    min_max = request.form.get("min_max") == "true"
+    num_components = int(request.form.get("num_components"))
+
+    result = obtener_componentes_principales(df, num_components, min_max)
 
     return jsonify(result)
 

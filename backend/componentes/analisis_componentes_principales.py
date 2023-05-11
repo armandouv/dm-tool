@@ -36,10 +36,15 @@ def obtener_analisis_componentes_principales(df: DataFrame, min_max: bool):
 
     cumulative_variances = np.cumsum(explained_variances)
     candidate_variances = []
+    min_num_components = -1
+    max_num_components = -1
     for n_components in count(start=1):
         if 0.75 <= cumulative_variances[n_components - 1] <= 0.9:
+            if min_num_components == -1:
+                min_num_components = n_components
             candidate_variances.append((n_components, cumulative_variances[n_components - 1]))
         elif cumulative_variances[n_components - 1] > 0.9:
+            max_num_components = n_components - 1
             break
 
     plt.clf()
@@ -59,6 +64,7 @@ def obtener_analisis_componentes_principales(df: DataFrame, min_max: bool):
         "eigenvectors": DataFrame(eigenvectors).to_csv(),
         "explained_variances": DataFrame(explained_variances).to_csv(),
         "candidate_variances": DataFrame(candidate_variances).to_csv(),
+        "candidate_num_components": (min_num_components, max_num_components),
         "cumulative_variances_graph": cumulative_variances_graph,
         "relevance_proportion": DataFrame(abs(eigenvectors)).to_csv(),
         "components_load": DataFrame(eigenvectors, columns=numerical_df.columns).to_csv(),
@@ -66,30 +72,50 @@ def obtener_analisis_componentes_principales(df: DataFrame, min_max: bool):
     }
 
 
-def obtener_componentes_principales(df: DataFrame, num_components: int):
+def obtener_componentes_principales(df: DataFrame, num_components: int, min_max: bool):
     numerical_df = df.select_dtypes(include=['int', 'float'])
     non_numerical_df = df.select_dtypes(exclude=['int', 'float'])
 
-    standardize = StandardScaler()
+    standardize = StandardScaler() if not min_max else MinMaxScaler()
     standardized_matrix = standardize.fit_transform(numerical_df)
 
     pca = PCA(n_components=num_components)
     transformed_matrix = pca.fit_transform(standardized_matrix)
 
-    # Create column names for the components based on original attribute names
-    component_names = [f'Component {i + 1}: {col}' for i, col in enumerate(numerical_df.columns)]
-    component_names = component_names[:num_components]
-
-    # Transform the matrix back to the original space
-    transformed_numerical = DataFrame(standardize.inverse_transform(transformed_matrix), columns=numerical_df.columns)[
-        component_names]
-
-    # Concatenate the transformed numerical dataset with the non-numerical dataset
-    transformed_dataset = concat([transformed_numerical, non_numerical_df], axis=1)
+    transformed_dataset = concat([DataFrame(transformed_matrix), non_numerical_df], axis=1)
 
     return {
-        "transformed_dataset": transformed_dataset
+        "transformed_dataset": transformed_dataset.to_csv(),
+        "head": transformed_dataset.head(10).to_csv(),
     }
+
+
+
+
+"""
+def obtener_componentes_principales(df: DataFrame, num_components: int, min_max: bool):
+    numerical_df = df.select_dtypes(include=['int', 'float'])
+    non_numerical_df = df.select_dtypes(exclude=['int', 'float'])
+
+    standardize = StandardScaler() if not min_max else MinMaxScaler()
+    standardized_matrix = standardize.fit_transform(numerical_df)
+
+    pca = PCA(n_components=num_components)
+    transformed_matrix = pca.fit_transform(standardized_matrix)
+
+    # Get the names of the selected components
+    selected_component_indices = pca.components_[:num_components].argsort()[::-1]
+    selected_component_names = numerical_df.columns[selected_component_indices][:num_components]
+
+    # Create a DataFrame with the selected components and concatenate it with the non-numerical DataFrame
+    selected_components = DataFrame(transformed_matrix[:, selected_component_indices], columns=selected_component_names)
+    transformed_dataset = concat([selected_components, non_numerical_df], axis=1)
+
+    return {
+        "transformed_dataset": transformed_dataset,
+        "head": transformed_dataset.head(10).to_csv(),
+    }
+
 
 
 def analisis_correlacional(df: DataFrame, hue: str, x: str, y: str):
@@ -121,3 +147,4 @@ def drop_columns(df: DataFrame, columns: List[str]):
     return {
         "new_dataset": new_dataset
     }
+"""

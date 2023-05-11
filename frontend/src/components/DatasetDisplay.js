@@ -18,15 +18,24 @@ export function getHeader(parsedData) {
 
 
 export const DatasetDisplay = ({title, description, filename, data, hidden}) => {
-    const modifiedData = data.map((row, index_) => {
-        const {[Object.keys(row)[0]]: _, ...newRow} = row;
+    const modifiedData = data.map((row) => {
+        const newRow = {};
+        for (const [key, value] of Object.entries(row)) {
+            if (key !== "") {
+                newRow[key] = value;
+            }
+        }
         return newRow;
     });
+
+    if (Object.values(modifiedData[modifiedData.length - 1]).every(val => val === "")) {
+        modifiedData.pop();
+    }
 
     return (
         <ComponentData title={title} description={description}>
             <CSVLink
-                data={modifiedData.slice(0, -1)}
+                data={modifiedData}
                 target="_blank"
                 filename={
                     filename +
